@@ -1,7 +1,8 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using Entity.Context;
+using Entity.Models;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using RestApiCrud.Data;
-using RestApiCrud.Model;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -14,18 +15,19 @@ namespace RestApiCrud.Controllers
     public class EmployeesController : ControllerBase
     {
         private IEmployeeData _employeeData;
-        public EmployeesController(IEmployeeData employeeData)
+        private DatabaseContext _db;
+
+        public EmployeesController(IEmployeeData employeeData, DatabaseContext db)
         {
             _employeeData = employeeData;
+            _db = db;
         }
-
 
         [HttpGet("GetEmployees")]
         public IActionResult GetEmployees()
         {
             return Ok(_employeeData.GetEmployees());
         }
-
 
         [HttpGet("GetSingle/{id}")]
         public IActionResult GetSingle(int id)
@@ -38,25 +40,27 @@ namespace RestApiCrud.Controllers
             return NotFound($"No Employee with Id = {id}");
         }
 
-       
         [HttpPost("AddEmployee")]
         public IActionResult AddEmployee(Employee employee)
         {
             _employeeData.AddEmployee(employee);
-            return Created(HttpContext.Request.Scheme + "://" + HttpContext.Request.Host + "/" + HttpContext.Request.Path + "/" + employee.Id, employee);
+            _db.SaveChanges();
+            return Ok(employee);
         }
 
         [HttpDelete("DeleteEmployee/{id}")]
         public bool Delete(int id)
         {
-            return _employeeData.DeleteEmployee(id);
+            bool BOOL = _employeeData.DeleteEmployee(id);
+            _db.SaveChanges();
+            return BOOL;
         }
-
 
         [HttpPut("Update")]
         public Employee Update(Employee employee)
         {
             var updatedEmployee = _employeeData.EditEmployee(employee);
+            _db.SaveChanges();
             return updatedEmployee;
         }
     }
